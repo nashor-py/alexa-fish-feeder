@@ -1,8 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import requests
 
 app = Flask(__name__)
-
 FIREBASE_URL = "https://fish-feeder-1670f-default-rtdb.firebaseio.com/feed_now.json"
 
 @app.route("/", methods=["POST"])
@@ -12,14 +11,10 @@ def alexa_webhook():
 
         intent_name = req.get("request", {}).get("intent", {}).get("name", "")
         if intent_name == "FeedNowIntent":
-            # Update Firebase with feed_now = true
-            requests.put(FIREBASE_URL, json=True)  # incorrect
-            # Correct version:
-            requests.put(FIREBASE_URL, json=True)  # ❌
+            # Trigger feeding
+            requests.put(FIREBASE_URL, json=True)
 
-            requests.put(FIREBASE_URL, json={"feed_now": True})  # ✅
-
-            return jsonify({
+            response_data = {
                 "version": "1.0",
                 "response": {
                     "outputSpeech": {
@@ -28,9 +23,11 @@ def alexa_webhook():
                     },
                     "shouldEndSession": True
                 }
-            })
+            }
+            return make_response(jsonify(response_data), 200)
+
         else:
-            return jsonify({
+            response_data = {
                 "version": "1.0",
                 "response": {
                     "outputSpeech": {
@@ -39,10 +36,12 @@ def alexa_webhook():
                     },
                     "shouldEndSession": True
                 }
-            })
+            }
+            return make_response(jsonify(response_data), 200)
+
     except Exception as e:
         print("Error:", e)
-        return jsonify({
+        error_response = {
             "version": "1.0",
             "response": {
                 "outputSpeech": {
@@ -51,4 +50,5 @@ def alexa_webhook():
                 },
                 "shouldEndSession": True
             }
-        })
+        }
+        return make_response(jsonify(error_response), 200)
