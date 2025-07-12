@@ -1,16 +1,40 @@
-from flask import Flask, request, jsonify
-import requests
+@app.route("/", methods=["POST"])
+def alexa_webhook():
+    req = request.get_json()
+    intent_name = req["request"]["intent"]["name"]
 
-app = Flask(__name__)
-
-FIREBASE_URL = 'https://fish-feeder-1670f-default-rtdb.firebaseio.com/feed_now.json'
-
-@app.route('/feed', methods=['POST'])
-def feed():
-    print("Received Alexa trigger")
-    requests.put(FIREBASE_URL, json=True)
-    return jsonify({'message': 'Feeding triggered'}), 200
-
-@app.route('/', methods=['GET'])
-def index():
-    return "Fish Feeder Python Backend is running!"
+    if intent_name == "FeedNowIntent":
+        try:
+            requests.put(FIREBASE_URL, json=True)
+            return jsonify({
+                "version": "1.0",
+                "response": {
+                    "outputSpeech": {
+                        "type": "PlainText",
+                        "text": "Feeding your fish now!"
+                    },
+                    "shouldEndSession": True
+                }
+            })
+        except:
+            return jsonify({
+                "version": "1.0",
+                "response": {
+                    "outputSpeech": {
+                        "type": "PlainText",
+                        "text": "There was an error triggering the feeder."
+                    },
+                    "shouldEndSession": True
+                }
+            })
+    else:
+        return jsonify({
+            "version": "1.0",
+            "response": {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": "I didn't understand that command."
+                },
+                "shouldEndSession": True
+            }
+        })
